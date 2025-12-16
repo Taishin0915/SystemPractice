@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - 図書館予約管理システム{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('book_list') }}" class="btn btn-secondary">← 一覧に戻る</a>
+    <h1>{{ book.title }}</h1>
+</div>
+
+<div class="book-detail">
+    <div class="book-detail-info">
+        <div class="detail-row">
+            <strong>著者:</strong>
+            <span>{{ book.author }}</span>
+        </div>
+        {% if book.isbn %}
+        <div class="detail-row">
+            <strong>ISBN:</strong>
+            <span>{{ book.isbn }}</span>
+        </div>
+        {% endif %}
+        {% if book.publisher %}
+        <div class="detail-row">
+            <strong>出版社:</strong>
+            <span>{{ book.publisher }}</span>
+        </div>
+        {% endif %}
+        {% if book.publication_date %}
+        <div class="detail-row">
+            <strong>出版日:</strong>
+            <span>{{ book.publication_date.strftime('%Y年%m月%d日') }}</span>
+        </div>
+        {% endif %}
+        <div class="detail-row">
+            <strong>在庫状況:</strong>
+            <span>
+                {% if book.is_available() %}
+                    <span class="badge badge-success">利用可能 ({{ book.available_copies }}/{{ book.total_copies }})</span>
+                {% else %}
+                    <span class="badge badge-danger">貸出中</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    {% if current_user.is_authenticated %}
+        <div class="book-actions">
+            {% if book.is_available() and not has_reservation %}
+                <form method="POST" action="{{ url_for('reserve_book', book_id=book.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-primary">予約する</button>
+                </form>
+            {% elif has_reservation %}
+                <p class="info-message">この書籍は既に予約済みです。</p>
+            {% else %}
+                <p class="info-message">この書籍は現在利用できません。</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="book-actions">
+            <p class="info-message">予約するには<a href="{{ url_for('login') }}">ログイン</a>が必要です。</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

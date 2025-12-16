@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}図書館予約管理システム{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <a href="{{ url_for('book_list') }}">図書館予約管理システム</a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('book_list') }}">書籍一覧</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('reservation_list') }}">予約一覧</a></li>
+                    <li><a href="{{ url_for('loan_list') }}">貸出一覧</a></li>
+                    {% if current_user.is_admin() %}
+                        <li><a href="{{ url_for('admin_dashboard') }}">管理画面</a></li>
+                    {% endif %}
+                    <li><a href="{{ url_for('logout') }}">ログアウト</a></li>
+                    <li class="user-info">{{ current_user.username }}さん</li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">ログイン</a></li>
+                    <li><a href="{{ url_for('register') }}">会員登録</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 図書館予約管理システム</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+

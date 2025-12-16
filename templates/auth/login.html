@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}ログイン - 図書館予約管理システム{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h1>ログイン</h1>
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <label for="username">ユーザー名</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">パスワード</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">ログイン</button>
+        </form>
+        <p class="auth-link">
+            アカウントをお持ちでない方は <a href="{{ url_for('register') }}">こちらから登録</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+

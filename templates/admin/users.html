@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}ユーザー管理 - 図書館予約管理システム{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>ユーザー管理</h1>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">ダッシュボードに戻る</a>
+</div>
+
+{% if users %}
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ユーザー名</th>
+                    <th>メールアドレス</th>
+                    <th>役割</th>
+                    <th>登録日</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.role.value == 'admin' %}
+                                <span class="badge badge-warning">管理者</span>
+                            {% else %}
+                                <span class="badge badge-info">一般ユーザー</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at.strftime('%Y年%m月%d日') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p>ユーザーがありません。</p>
+    </div>
+{% endif %}
+{% endblock %}
+

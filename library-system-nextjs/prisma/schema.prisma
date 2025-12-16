@@ -1,0 +1,155 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum ReservationStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+enum LoanStatus {
+  active
+  returned
+  overdue
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique @db.VarChar(80)
+  email         String    @unique @db.VarChar(120)
+  passwordHash  String    @map("password_hash") @db.VarChar(255)
+  role          UserRole  @default(user)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  penaltyUntil  DateTime? @map("penalty_until")
+  barcode       String?   @unique @db.VarChar(50)
+  
+  reservations  Reservation[]
+  loans         Loan[]
+  reviews       Review[]
+  favorites     Favorite[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Book {
+  id              Int       @id @default(autoincrement())
+  title           String    @db.VarChar(200)
+  author          String    @db.VarChar(100)
+  isbn            String?   @unique @db.VarChar(20)
+  publisher       String?   @db.VarChar(100)
+  publicationDate DateTime? @map("publication_date") @db.Date
+  totalCopies     Int       @default(1) @map("total_copies")
+  availableCopies Int       @default(1) @map("available_copies")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  
+  barcode         String?   @unique @db.VarChar(50)
+  
+  reservations    Reservation[]
+  loans           Loan[]
+  reviews         Review[]
+  favorites       Favorite[]
+
+  @@map("books")
+}
+
+model Reservation {
+  id              Int               @id @default(autoincrement())
+  userId          Int               @map("user_id")
+  bookId          Int               @map("book_id")
+  reservationDate DateTime          @default(now()) @map("reservation_date")
+  status          ReservationStatus @default(pending)
+  expiryDate      DateTime?         @map("expiry_date")
+  
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book            Book              @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@map("reservations")
+}
+
+model Loan {
+  id         Int        @id @default(autoincrement())
+  userId     Int        @map("user_id")
+  bookId     Int        @map("book_id")
+  loanDate   DateTime   @default(now()) @map("loan_date")
+  dueDate    DateTime   @map("due_date")
+  returnDate DateTime?  @map("return_date")
+  status     LoanStatus @default(active)
+  
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book       Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+  @@map("loans")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  bookId    Int      @map("book_id")
+  rating    Int      @default(3) // 1-5
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@map("reviews")
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  bookId    Int      @map("book_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId]) // ユーザーごとの重複登録防止
+  @@index([userId])
+  @@index([bookId])
+  @@map("favorites")
+}
+
+enum NotificationType {
+  info
+  alert
+  success
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int              @map("user_id")
+  message   String           @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  type      NotificationType @default(info)
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}

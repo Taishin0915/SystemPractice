@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}貸出一覧 - 図書館予約管理システム{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>貸出一覧</h1>
+</div>
+
+{% if loans %}
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {% if current_user.is_admin() %}
+                        <th>ユーザー</th>
+                    {% endif %}
+                    <th>書籍</th>
+                    <th>著者</th>
+                    <th>貸出日</th>
+                    <th>返却期限</th>
+                    <th>返却日</th>
+                    <th>状態</th>
+                    {% if current_user.is_admin() %}
+                        <th>操作</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in loans %}
+                    <tr class="{% if loan.is_overdue() and loan.status.value != 'returned' %}row-overdue{% endif %}">
+                        {% if current_user.is_admin() %}
+                            <td>{{ loan.user.username }}</td>
+                        {% endif %}
+                        <td>{{ loan.book.title }}</td>
+                        <td>{{ loan.book.author }}</td>
+                        <td>{{ loan.loan_date.strftime('%Y年%m月%d日') }}</td>
+                        <td>{{ loan.due_date.strftime('%Y年%m月%d日') }}</td>
+                        <td>
+                            {% if loan.return_date %}
+                                {{ loan.return_date.strftime('%Y年%m月%d日') }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if loan.status.value == 'active' %}
+                                <span class="badge badge-info">貸出中</span>
+                            {% elif loan.status.value == 'returned' %}
+                                <span class="badge badge-success">返却済み</span>
+                            {% elif loan.status.value == 'overdue' %}
+                                <span class="badge badge-danger">延滞</span>
+                            {% endif %}
+                            {% if loan.is_overdue() and loan.status.value != 'returned' %}
+                                <span class="badge badge-danger">期限超過</span>
+                            {% endif %}
+                        </td>
+                        {% if current_user.is_admin() %}
+                            <td>
+                                {% if loan.status.value != 'returned' %}
+                                    <form method="POST" action="{{ url_for('return_loan', loan_id=loan.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-success">返却</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p>貸出がありません。</p>
+    </div>
+{% endif %}
+{% endblock %}
+

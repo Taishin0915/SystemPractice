@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}書籍一覧 - 図書館予約管理システム{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>書籍一覧</h1>
+</div>
+
+<div class="search-box">
+    <form method="GET" action="{{ url_for('book_list') }}" class="search-form">
+        <input type="text" name="q" placeholder="タイトル、著者、ISBNで検索..." value="{{ search_query }}" class="search-input">
+        <button type="submit" class="btn btn-primary">検索</button>
+        {% if search_query %}
+            <a href="{{ url_for('book_list') }}" class="btn btn-secondary">クリア</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if books %}
+    <div class="book-grid">
+        {% for book in books %}
+            <div class="book-card">
+                <div class="book-info">
+                    <h3><a href="{{ url_for('book_detail', book_id=book.id) }}">{{ book.title }}</a></h3>
+                    <p class="book-author">著者: {{ book.author }}</p>
+                    {% if book.isbn %}
+                        <p class="book-isbn">ISBN: {{ book.isbn }}</p>
+                    {% endif %}
+                    <div class="book-status">
+                        {% if book.is_available() %}
+                            <span class="badge badge-success">利用可能 ({{ book.available_copies }}/{{ book.total_copies }})</span>
+                        {% else %}
+                            <span class="badge badge-danger">貸出中</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if total > per_page %}
+        <div class="pagination">
+            {% if page > 1 %}
+                <a href="{{ url_for('book_list', page=page-1, q=search_query) }}" class="btn btn-secondary">前へ</a>
+            {% endif %}
+            <span>ページ {{ page }} / {{ (total + per_page - 1) // per_page }}</span>
+            {% if page * per_page < total %}
+                <a href="{{ url_for('book_list', page=page+1, q=search_query) }}" class="btn btn-secondary">次へ</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="empty-state">
+        <p>書籍が見つかりませんでした。</p>
+    </div>
+{% endif %}
+{% endblock %}
+

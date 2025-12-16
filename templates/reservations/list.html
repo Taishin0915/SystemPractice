@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}予約一覧 - 図書館予約管理システム{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>予約一覧</h1>
+</div>
+
+{% if reservations %}
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {% if current_user.is_admin() %}
+                        <th>ユーザー</th>
+                    {% endif %}
+                    <th>書籍</th>
+                    <th>著者</th>
+                    <th>予約日</th>
+                    <th>有効期限</th>
+                    <th>状態</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                    <tr>
+                        {% if current_user.is_admin() %}
+                            <td>{{ reservation.user.username }}</td>
+                        {% endif %}
+                        <td>{{ reservation.book.title }}</td>
+                        <td>{{ reservation.book.author }}</td>
+                        <td>{{ reservation.reservation_date.strftime('%Y年%m月%d日 %H:%M') }}</td>
+                        <td>{{ reservation.expiry_date.strftime('%Y年%m月%d日 %H:%M') }}</td>
+                        <td>
+                            {% if reservation.status.value == 'pending' %}
+                                <span class="badge badge-warning">待機中</span>
+                            {% elif reservation.status.value == 'confirmed' %}
+                                <span class="badge badge-success">確認済み</span>
+                            {% else %}
+                                <span class="badge badge-secondary">キャンセル済み</span>
+                            {% endif %}
+                            {% if reservation.is_expired() and reservation.status.value == 'pending' %}
+                                <span class="badge badge-danger">期限切れ</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if reservation.status.value == 'pending' %}
+                                {% if current_user.is_admin() %}
+                                    <form method="POST" action="{{ url_for('create_loan', reservation_id=reservation.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-primary">貸出</button>
+                                    </form>
+                                {% endif %}
+                                {% if not current_user.is_admin() or reservation.user_id == current_user.id %}
+                                    <form method="POST" action="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('予約をキャンセルしますか？')">キャンセル</button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p>予約がありません。</p>
+    </div>
+{% endif %}
+{% endblock %}
+

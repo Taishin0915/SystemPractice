@@ -1,0 +1,84 @@
+name: library-system-nextjs
+
+services:
+  # MySQLデータベース
+  db:
+    image: mysql:8.0
+    container_name: library_nextjs_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: library_system
+      MYSQL_USER: library_user
+      MYSQL_PASSWORD: library_password
+    ports:
+      - "3308:3306"  # 既存のFlask版とポートを分ける
+    volumes:
+      - mysql_nextjs_data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d  # 初期化スクリプト（オプション）
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - library_nextjs_network
+
+  # Next.jsアプリケーション（開発環境）
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: library_nextjs_web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: mysql://library_user:library_password@db:3306/library_system?charset=utf8mb4
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: dev-secret-key-change-in-production
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # ホットリロードのためにソースコードをマウント
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - library_nextjs_network
+
+  # Prisma Studio（オプション - データベースGUI）
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: library_nextjs_prisma_studio
+    restart: "no"
+    ports:
+      - "5555:5555"
+    environment:
+      DATABASE_URL: mysql://library_user:library_password@db:3306/library_system?charset=utf8mb4
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npx prisma studio --hostname 0.0.0.0 --port 5555
+    networks:
+      - library_nextjs_network
+    profiles:
+      - tools  # デフォルトでは起動しない（--profile toolsで起動）
+
+volumes:
+  mysql_nextjs_data:
+
+networks:
+  library_nextjs_network:
+    driver: bridge
+
+
+
+
